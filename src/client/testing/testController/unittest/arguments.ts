@@ -4,7 +4,7 @@
 import { TestFilter } from '../../common/types';
 import { filterArguments, getOptionValues, getPositionalArguments } from '../common/argumentsHelper';
 
-const OptionsWithArguments = ['-k', '-p', '-s', '-t', '--pattern', '--start-directory', '--top-level-directory'];
+const OptionsWithArguments = ['-k', '-p', '-s', '-t', '-j', '--pattern', '--start-directory', '--top-level-directory', '--django-settings-module'];
 
 const OptionsWithoutArguments = [
     '-b',
@@ -85,16 +85,32 @@ export function unittestGetTopLevelDirectory(args: string[]): string | null {
     return null;
 }
 
+export function unittestGetDjangoSettingsModule(args: string[]): string | null {
+    const shortValue = getOptionValues(args, '-j');
+    if (shortValue.length === 1) {
+        return shortValue[0];
+    }
+    const longValue = getOptionValues(args, '--django-settings-module');
+    if (longValue.length === 1) {
+        return longValue[0];
+    }
+    return null;
+}
+
 export function getTestRunArgs(args: string[]): string[] {
     const startTestDiscoveryDirectory = unittestGetTestFolders(args)[0];
     const pattern = unittestGetTestPattern(args);
     const topLevelDir = unittestGetTopLevelDirectory(args);
+    const djangoSettingsModule = unittestGetDjangoSettingsModule(args);
 
     const failFast = args.some((arg) => arg.trim() === '-f' || arg.trim() === '--failfast');
     const verbosity = args.some((arg) => arg.trim().indexOf('-v') === 0) ? 2 : 1;
     const testArgs = [`--us=${startTestDiscoveryDirectory}`, `--up=${pattern}`, `--uvInt=${verbosity}`];
     if (topLevelDir) {
         testArgs.push(`--ut=${topLevelDir}`);
+    }
+    if (djangoSettingsModule) {
+        testArgs.push(`--jsm=${djangoSettingsModule}`);
     }
     if (failFast) {
         testArgs.push('--uf');

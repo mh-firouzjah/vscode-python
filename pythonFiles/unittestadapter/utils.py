@@ -212,19 +212,21 @@ def build_test_tree(
 def parse_unittest_args(args: List[str]) -> Tuple[str, str, Union[str, None]]:
     """Parse command-line arguments that should be forwarded to unittest to perform discovery.
 
-    Valid unittest arguments are: -v, -s, -p, -t and their long-form counterparts,
-    however we only care about the last three.
+    Valid unittest arguments are: -v, -s, -p, -t, -j and their long-form counterparts,
+    however we only care about the last four.
 
     The returned tuple contains the following items
     - start_directory: The directory where to start discovery, defaults to .
     - pattern: The pattern to match test files, defaults to test*.py
     - top_level_directory: The top-level directory of the project, defaults to None, and unittest will use start_directory behind the scenes.
+    - django_settings_module: The path to the django projects main settings.py file, defaults to None
     """
 
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--start-directory", "-s", default=".")
     arg_parser.add_argument("--pattern", "-p", default="test*.py")
     arg_parser.add_argument("--top-level-directory", "-t", default=None)
+    arg_parser.add_argument("--django-settings-module", "-j", default=None)
 
     parsed_args, _ = arg_parser.parse_known_args(args)
 
@@ -232,43 +234,5 @@ def parse_unittest_args(args: List[str]) -> Tuple[str, str, Union[str, None]]:
         parsed_args.start_directory,
         parsed_args.pattern,
         parsed_args.top_level_directory,
+        parsed_args.django_settings_module,
     )
-
-
-def setup_django_test_env(root):
-    """Configure Django environment for running Django tests.
-
-    It checks if Django is installed by attempting to import the `django` module.
-    Looks for `manage.py` file to extract the value of `DJANGO_SETTINGS_MODULE`.
-    Sets `DJANGO_SETTINGS_MODULE` environment variable and initializes Django setup.
-    If couldn't find the file or import django during this process, the function fails silently.
-
-    Args:
-        root (str): The root directory of the Django project.
-
-    Returns:
-        None
-    """
-    import os, re
-
-    try:
-        # Check if Django is installed
-        import django
-
-        # Check if manage.py exists
-        with open(os.path.join(root, "manage.py"), "r") as manage_py:
-            # Look for a line that sets the DJANGO_SETTINGS_MODULE environment variable
-            pattern = r"^os\.environ\.setdefault\((\'|\")DJANGO_SETTINGS_MODULE(\'|\"), (\'|\")(?P<settings_path>[\w.]+)(\'|\")\)$"
-            for line in manage_py.readlines():
-                pattern_matched = re.match(pattern, line.strip())
-                if pattern_matched is not None:
-                    # Extract value for DJANGO_SETTINGS_MODULE
-                    settings_path = str(
-                        pattern_matched.groupdict().get("settings_path", "")
-                    )
-                    # Set the DJANGO_SETTINGS_MODULE environment variable and initialize Django's settings
-                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_path)
-                    django.setup()
-                    return
-    except (ModuleNotFoundError, FileNotFoundError):
-        return

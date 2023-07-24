@@ -27,7 +27,7 @@ import unittest
 
 sys.path.insert(1, os.path.abspath(__file__))  # this file
 
-from unittestadapter.utils import setup_django_test_env
+from unittestadapter.django_test_init import setup_django_test_env
 
 try:
     import thread
@@ -269,6 +269,11 @@ def main():
         help="Top level directory of project (default to start directory)",
     )
     parser.add_option(
+        "--jsm",
+        type="str",
+        help="Django settings module path (default to None)",
+    )
+    parser.add_option(
         "--uvInt",
         "--verboseInt",
         type="int",
@@ -279,6 +284,8 @@ def main():
         "--uc", "--catch", type="str", help="Catch control-C and display results"
     )
     (opts, _) = parser.parse_args()
+
+    setup_django_test_env(**{'django_settings_module':getattr(opts, 'jsm', None), 'root':opts.us or '.'})
 
     sys.path[0] = os.getcwd()
     if opts.result_port:
@@ -331,15 +338,11 @@ def main():
                 opts.us = "."
             if opts.up is None:
                 opts.up = "test*.py"
-            # Setup django env to prevent missing django tests
-            setup_django_test_env(opts.us)
             tests = unittest.defaultTestLoader.discover(opts.us, opts.up)
         else:
             # loadTestsFromNames doesn't work well (with duplicate file names or class names)
             # Easier approach is find the test suite and use that for running
             loader = unittest.TestLoader()
-            # Setup django env to prevent missing django tests
-            setup_django_test_env(opts.us)
             # opts.us will be passed in
             suites = loader.discover(
                 opts.us, pattern=os.path.basename(opts.testFile), top_level_dir=opts.ut

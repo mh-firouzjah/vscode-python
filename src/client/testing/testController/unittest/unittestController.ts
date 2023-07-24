@@ -19,7 +19,7 @@ import {
     RawTestParent,
     TestData,
 } from '../common/types';
-import { unittestGetTestFolders, unittestGetTestPattern, unittestGetTopLevelDirectory } from './arguments';
+import { unittestGetTestFolders, unittestGetTestPattern, unittestGetTopLevelDirectory, unittestGetDjangoSettingsModule } from './arguments';
 import {
     createErrorTestItem,
     createWorkspaceRootTestItem,
@@ -131,14 +131,21 @@ export class UnittestController implements ITestFrameworkController {
             const startDir = unittestGetTestFolders(options.args)[0];
             const pattern = unittestGetTestPattern(options.args);
             const topLevelDir = unittestGetTopLevelDirectory(options.args);
+            const djangoSettingsModule = unittestGetDjangoSettingsModule(options.args);
             let testDir = startDir;
             if (path.isAbsolute(startDir)) {
                 const relative = path.relative(options.cwd, startDir);
                 testDir = relative.length > 0 ? relative : '.';
             }
 
+            // Here I did reordered the items inside the list because I thought may be djangoSettingsModule require more priority than topLevelDir
+            // This strongly need to be check by a TS developer!
             const runOptionsArgs: string[] =
-                topLevelDir == null ? [startDir, pattern] : [startDir, pattern, topLevelDir];
+                djangoSettingsModule == null
+                ? [startDir, pattern]
+                : topLevelDir == null
+                ? [startDir, pattern, djangoSettingsModule]
+                : [startDir, pattern, djangoSettingsModule, topLevelDir];
 
             const runOptions: Options = {
                 // unittest needs to load modules in the workspace
