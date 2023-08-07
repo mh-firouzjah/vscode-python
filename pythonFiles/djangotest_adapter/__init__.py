@@ -19,7 +19,7 @@ def setup_django_env(manage_py_module='', root='.'):
         root (str): The root directory of the Django project.
 
     Returns:
-        None
+        boolean: either succeeded or failed.
     """
 
     # To avoid false positive ModuleNotFoundError from django.setup() due to missing current workspace in sys.path
@@ -28,7 +28,7 @@ def setup_django_env(manage_py_module='', root='.'):
     try:
         import django
     except ImportError:
-        return
+        return False
 
     if not manage_py_module:
         manage_py_module = os.path.join(root, "manage.py")
@@ -37,7 +37,7 @@ def setup_django_env(manage_py_module='', root='.'):
         with open(manage_py_module, "r") as f:
             manage_py_module = f.readlines()
     except FileNotFoundError:
-        return
+        return False
 
     django_settings_module = None
     pattern = r"^os\.environ\.setdefault\((\'|\")DJANGO_SETTINGS_MODULE(\'|\"), (\'|\")(?P<settings_path>[\w.]+)(\'|\")\)$"
@@ -48,13 +48,13 @@ def setup_django_env(manage_py_module='', root='.'):
             break
 
     if django_settings_module is None:
-        return
+        return False
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", django_settings_module)
 
     try:
         django.setup()
     except ModuleNotFoundError:
-        return
+        return False
 
-    return
+    return True

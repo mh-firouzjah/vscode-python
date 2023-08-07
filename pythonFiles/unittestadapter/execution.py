@@ -179,9 +179,9 @@ def run_tests(
     start_dir: str,
     test_ids: List[str],
     pattern: str,
-    djangotests: bool,
     top_level_dir: Optional[str],
     uuid: Optional[str],
+    djangotests: bool=False,
 ) -> PayloadDict:
     cwd = os.path.abspath(start_dir)
     status = TestExecutionStatus.error
@@ -196,14 +196,14 @@ def run_tests(
             pattern = os.path.basename(cwd)
 
         if djangotests:
-            runner = DjangoTestsDiscoverRunner(resultclass=UnittestTestResult,
+            discover_runner = DjangoTestsDiscoverRunner(resultclass=UnittestTestResult,
                                                pattern=pattern,
                                                top_level=top_level_dir)
             if test_ids:
-                suite = runner.loadTestsFromNames(test_ids)
+                suite = discover_runner.loadTestsFromNames(test_ids)
             else:
-                suite = runner.discover(start_dir)
-            result = runner.run(suite)
+                suite = discover_runner.discover(start_dir)
+            result = discover_runner.run(suite)
 
         else:
             # Discover tests at path with the file name as a pattern (if any).
@@ -251,8 +251,9 @@ if __name__ == "__main__":
     )
 
     # Setup django env to prevent missing django tests
+    djangotests = False
     if manage_py_module is not None:
-        setup_django_env(manage_py_module)
+        djangotests = setup_django_env(manage_py_module)
 
     run_test_ids_port = os.environ.get("RUN_TEST_IDS_PORT")
     run_test_ids_port_int = (
@@ -297,7 +298,7 @@ if __name__ == "__main__":
         # Perform test execution.
         payload = run_tests(
             start_dir, test_ids_from_buffer, pattern, top_level_dir, uuid,
-            djangotests=manage_py_module
+            djangotests=djangotests
         )
     else:
         cwd = os.path.abspath(start_dir)
