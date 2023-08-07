@@ -110,7 +110,7 @@ export function getTestRunArgs(args: string[]): string[] {
         testArgs.push(`--ut=${topLevelDir}`);
     }
     if (djangoManagePyModule) {
-        testArgs.push(`--jmm=${djangoManagePyModule}`);
+        testArgs.push(`--django-manage-mudole=${djangoManagePyModule}`);
     }
     if (failFast) {
         testArgs.push('--uf');

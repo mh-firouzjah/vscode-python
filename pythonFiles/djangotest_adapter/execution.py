@@ -1,3 +1,4 @@
+import unittest
 from django.test.runner import DiscoverRunner
 
 
@@ -26,8 +27,20 @@ class DjangoTestsDiscoverRunner(DiscoverRunner):
             result: TextTestResult
         """
 
+        def _get_test_cases(test_suite):
+            test_cases = []
+            for test in test_suite:
+                if isinstance(test, unittest.TestSuite):
+                    test_cases.extend(_get_test_cases(test))
+                else:
+                    # Assuming the test case name is in the format "<class_name> testMethod=<method_name>"
+                    test_cases.append(test.id().split(" ")[0])
+            return test_cases
+
+        actual_test_cases = _get_test_cases(tests)
+
         self.setup_test_environment()
-        suite = self.build_suite(tests, **kwargs)
+        suite = self.build_suite(actual_test_cases, **kwargs)
         databases = self.get_databases(suite)
         suite.serialized_aliases = set(
             alias for alias, serialize in databases.items() if serialize

@@ -24,6 +24,7 @@ def setup_django_env(manage_py_module='', root='.'):
 
     # To avoid false positive ModuleNotFoundError from django.setup() due to missing current workspace in sys.path
     sys.path.insert(0, os.getcwd())
+    sys.path.insert(0, os.path.dirname(manage_py_module))
 
     try:
         import django

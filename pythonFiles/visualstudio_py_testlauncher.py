@@ -270,7 +270,8 @@ def main():
         help="Top level directory of project (default to start directory)",
     )
     parser.add_option(
-        "--jmm",
+        "-j",
+        "--django-manage-mudole",
         type="str",
         help="path to manage.py module of django project (default to None)",
     )
@@ -287,7 +288,7 @@ def main():
     (opts, _) = parser.parse_args()
 
     djangotests = setup_django_env(
-        **{"manage_py_module": getattr(opts, "jmm", None), "root": opts.us or "."}
+        **{"manage_py_module": getattr(opts, "django_manage_mudole", None), "root": opts.us or "."}
     )
 
     sys.path[0] = os.getcwd()
@@ -386,14 +387,13 @@ def main():
 
         failfast = opts.uf is not None
 
+        runner = unittest.TextTestRunner(
+            verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
+        )
         if djangotests:
             runner = DjangoTestsDiscoverRunner(
                 verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
-                )
-        else:
-            runner = unittest.TextTestRunner(
-                    verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
-                )
+            )
         result = runner.run(tests)
         if _channel is not None:
             _channel.close()
