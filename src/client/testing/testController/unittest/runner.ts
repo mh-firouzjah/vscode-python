@@ -235,7 +235,7 @@ export class UnittestRunner implements ITestsRunner {
             testArgs = testArgs.filter((arg) => arg !== '--uf');
 
             testArgs.push(`--result-port=${port}`);
-            testRunIds.forEach((i) => testArgs.push(`-t${i}`));
+            testRunIds.forEach((i) => testArgs.push(`-t ${i}`));
             testArgs.push(`--testFile=${testFilePath}`);
 
             if (options.debug === true) {

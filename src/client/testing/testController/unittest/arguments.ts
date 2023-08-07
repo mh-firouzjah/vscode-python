@@ -4,7 +4,7 @@
 import { TestFilter } from '../../common/types';
 import { filterArguments, getOptionValues, getPositionalArguments } from '../common/argumentsHelper';
 
-const OptionsWithArguments = ['-k', '-p', '-s', '-t', '-j', '--pattern', '--start-directory', '--top-level-directory', '--django-settings-module'];
+const OptionsWithArguments = ['-k', '-p', '-s', '-t', '-j', '--pattern', '--start-directory', '--top-level-directory', '--mange-py-module'];
 
 const OptionsWithoutArguments = [
     '-b',
@@ -85,12 +85,12 @@ export function unittestGetTopLevelDirectory(args: string[]): string | null {
     return null;
 }
 
-export function unittestGetDjangoSettingsModule(args: string[]): string | null {
+export function unittestGetDjangoManagePyModule(args: string[]): string | null {
     const shortValue = getOptionValues(args, '-j');
     if (shortValue.length === 1) {
         return shortValue[0];
     }
-    const longValue = getOptionValues(args, '--django-settings-module');
+    const longValue = getOptionValues(args, '--manage-py-module');
     if (longValue.length === 1) {
         return longValue[0];
     }
@@ -101,7 +101,7 @@ export function getTestRunArgs(args: string[]): string[] {
     const startTestDiscoveryDirectory = unittestGetTestFolders(args)[0];
     const pattern = unittestGetTestPattern(args);
     const topLevelDir = unittestGetTopLevelDirectory(args);
-    const djangoSettingsModule = unittestGetDjangoSettingsModule(args);
+    const djangoManagePyModule = unittestGetDjangoManagePyModule(args);
 
     const failFast = args.some((arg) => arg.trim() === '-f' || arg.trim() === '--failfast');
     const verbosity = args.some((arg) => arg.trim().indexOf('-v') === 0) ? 2 : 1;
@@ -109,8 +109,8 @@ export function getTestRunArgs(args: string[]): string[] {
     if (topLevelDir) {
         testArgs.push(`--ut=${topLevelDir}`);
     }
-    if (djangoSettingsModule) {
-        testArgs.push(`--jsm=${djangoSettingsModule}`);
+    if (djangoManagePyModule) {
+        testArgs.push(`--jmm=${djangoManagePyModule}`);
     }
     if (failFast) {
         testArgs.push('--uf');

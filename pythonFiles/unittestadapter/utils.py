@@ -10,11 +10,12 @@ import sys
 import unittest
 from typing import List, Tuple, Union
 
+from typing_extensions import TypedDict
+
 script_dir = pathlib.Path(__file__).parent.parent
 sys.path.append(os.fspath(script_dir))
 sys.path.append(os.fspath(script_dir / "lib" / "python"))
 
-from typing_extensions import TypedDict
 
 # Types
 
@@ -219,14 +220,14 @@ def parse_unittest_args(args: List[str]) -> Tuple[str, str, Union[str, None]]:
     - start_directory: The directory where to start discovery, defaults to .
     - pattern: The pattern to match test files, defaults to test*.py
     - top_level_directory: The top-level directory of the project, defaults to None, and unittest will use start_directory behind the scenes.
-    - django_settings_module: The path to the django projects main settings.py file, defaults to None
+    - manage_py_module: The path to the django projects manage.py module, defaults to None
     """
 
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--start-directory", "-s", default=".")
     arg_parser.add_argument("--pattern", "-p", default="test*.py")
     arg_parser.add_argument("--top-level-directory", "-t", default=None)
-    arg_parser.add_argument("--django-settings-module", "-j", default=None)
+    arg_parser.add_argument("--mange-py-module", "-j", default=None)
 
     parsed_args, _ = arg_parser.parse_known_args(args)
 
@@ -234,5 +235,5 @@ def parse_unittest_args(args: List[str]) -> Tuple[str, str, Union[str, None]]:
         parsed_args.start_directory,
         parsed_args.pattern,
         parsed_args.top_level_directory,
-        parsed_args.django_settings_module,
+        parsed_args.manage_py_module,
     )

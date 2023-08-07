@@ -26,7 +26,8 @@ sys.path.insert(0, os.path.join(PYTHON_FILES, "lib", "python"))
 from testing_tools import socket_manager
 from typing_extensions import NotRequired, TypeAlias, TypedDict
 from unittestadapter.utils import parse_unittest_args
-from unittestadapter.django_test_init import setup_django_test_env
+from djangotest_adapter import setup_django_env
+from djangotest_adapter.execution import DjangoTestsDiscoverRunner
 
 DEFAULT_PORT = "45454"
 
@@ -178,6 +179,7 @@ def run_tests(
     start_dir: str,
     test_ids: List[str],
     pattern: str,
+    djangotests: bool,
     top_level_dir: Optional[str],
     uuid: Optional[str],
 ) -> PayloadDict:
@@ -193,22 +195,35 @@ def run_tests(
             start_dir = os.path.dirname(cwd)
             pattern = os.path.basename(cwd)
 
-        # Discover tests at path with the file name as a pattern (if any).
-        loader = unittest.TestLoader()
+        if djangotests:
+            runner = DjangoTestsDiscoverRunner(resultclass=UnittestTestResult,
+                                               pattern=pattern,
+                                               top_level=top_level_dir)
+            if test_ids:
+                suite = runner.loadTestsFromNames(test_ids)
+            else:
+                suite = runner.discover(start_dir)
+            result = runner.run(suite)
 
-        args = {
-            "start_dir": start_dir,
-            "pattern": pattern,
-            "top_level_dir": top_level_dir,
-        }
-        suite = loader.discover(start_dir, pattern, top_level_dir)
+        else:
+            # Discover tests at path with the file name as a pattern (if any).
+            loader = unittest.TestLoader()
 
-        # Run tests.
-        runner = unittest.TextTestRunner(resultclass=UnittestTestResult)
-        # lets try to tailer our own suite so we can figure out running only the ones we want
-        loader = unittest.TestLoader()
-        tailor: unittest.TestSuite = loader.loadTestsFromNames(test_ids)
-        result: UnittestTestResult = runner.run(tailor)  # type: ignore
+            args = {
+                "start_dir": start_dir,
+                "pattern": pattern,
+                "top_level_dir": top_level_dir,
+            }
+            suite = loader.discover(start_dir, pattern, top_level_dir)
+            # Why `args` and `suite` are defined but not used?
+
+            # Run tests.
+            runner = unittest.TextTestRunner(resultclass=UnittestTestResult)
+            # lets try to tailer our own suite so we can figure out running only the ones we want
+            loader = unittest.TestLoader() # What's the point to re-define loader here?
+            tailor: unittest.TestSuite = loader.loadTestsFromNames(test_ids)
+            result: UnittestTestResult = runner.run(tailor)  # type: ignore
+            # it seems a good idea to use `suite` here as a fallback to `tailor`, e.g: runner.run(tailor or suite)
 
         payload["result"] = result.formatted
 
@@ -231,14 +246,13 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     index = argv.index("--udiscovery")
 
-    start_dir, pattern, top_level_dir, django_settings_module = parse_unittest_args(argv[index + 1 :])
+    start_dir, pattern, top_level_dir, manage_py_module = parse_unittest_args(
+        argv[index + 1 :]
+    )
 
     # Setup django env to prevent missing django tests
-    if django_settings_module is not None:
-        setup_django_test_env(django_settings_module)
-    else:
-        # Try to be smart and find DJANGO_SETTINGS_MODULE
-        setup_django_test_env(root=start_dir)
+    if manage_py_module is not None:
+        setup_django_env(manage_py_module)
 
     run_test_ids_port = os.environ.get("RUN_TEST_IDS_PORT")
     run_test_ids_port_int = (
@@ -282,7 +296,8 @@ if __name__ == "__main__":
     if test_ids_from_buffer:
         # Perform test execution.
         payload = run_tests(
-            start_dir, test_ids_from_buffer, pattern, top_level_dir, uuid
+            start_dir, test_ids_from_buffer, pattern, top_level_dir, uuid,
+            djangotests=manage_py_module
         )
     else:
         cwd = os.path.abspath(start_dir)
@@ -296,11 +311,10 @@ if __name__ == "__main__":
     # Build the request data and send it.
     addr = ("localhost", port)
     data = json.dumps(payload)
-    request = f"""Content-Length: {len(data)}
-Content-Type: application/json
-Request-uuid: {uuid}
-
-{data}"""
+    request = (f"Content-Length: {len(data)}\n"
+               "Content-Type: application/json\n"
+               "Request-uuid: {uuid}\n\n"
+               f"{data}")
     try:
         with socket_manager.SocketManager(addr) as s:
             if s.socket is not None:

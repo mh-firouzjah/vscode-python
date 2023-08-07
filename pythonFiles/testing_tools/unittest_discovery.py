@@ -15,20 +15,18 @@ sys.path.insert(
     ),
 )
 
-from unittestadapter.django_test_init import setup_django_test_env
+from djangotest_adapter import setup_django_env
 
 start_dir = sys.argv[1]
 pattern = sys.argv[2]
-django_settings_module = sys.argv[3] if len(sys.argv) >= 4 else None
+manage_py_module = sys.argv[3] if len(sys.argv) >= 4 else None
 top_level_dir = sys.argv[4] if len(sys.argv) >= 5 else None
 sys.path.insert(0, os.getcwd())
 
 # Setup django env to prevent missing django tests
-if django_settings_module is not None:
-    setup_django_test_env(django_settings_module)
-else:
-    # Try to be smart and find DJANGO_SETTINGS_MODULE
-    setup_django_test_env(root=start_dir)
+if manage_py_module is not None:
+    setup_django_env(manage_py_module)
+
 
 
 def get_sourceline(obj):

@@ -27,7 +27,8 @@ import unittest
 
 sys.path.insert(1, os.path.abspath(__file__))  # this file
 
-from unittestadapter.django_test_init import setup_django_test_env
+from djangotest_adapter import setup_django_env
+from djangotest_adapter.execution import DjangoTestsDiscoverRunner
 
 try:
     import thread
@@ -269,9 +270,9 @@ def main():
         help="Top level directory of project (default to start directory)",
     )
     parser.add_option(
-        "--jsm",
+        "--jmm",
         type="str",
-        help="Django settings module path (default to None)",
+        help="path to manage.py module of django project (default to None)",
     )
     parser.add_option(
         "--uvInt",
@@ -285,7 +286,9 @@ def main():
     )
     (opts, _) = parser.parse_args()
 
-    setup_django_test_env(**{'django_settings_module':getattr(opts, 'jsm', None), 'root':opts.us or '.'})
+    setup_django_env(
+        **{"manage_py_module": getattr(opts, "jmm", None), "root": opts.us or "."}
+    )
 
     sys.path[0] = os.getcwd()
     if opts.result_port:
@@ -380,14 +383,17 @@ def main():
                 )
         if opts.uvInt is None:
             opts.uvInt = 0
-        if opts.uf is not None:
-            runner = unittest.TextTestRunner(
-                verbosity=opts.uvInt, resultclass=VsTestResult, failfast=True
-            )
+
+        failfast = opts.uf is not None
+
+        if getattr(opts, "jmm", False):
+            runner = DjangoTestsDiscoverRunner(
+                verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
+                )
         else:
             runner = unittest.TextTestRunner(
-                verbosity=opts.uvInt, resultclass=VsTestResult
-            )
+                    verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
+                )
         result = runner.run(tests)
         if _channel is not None:
             _channel.close()

@@ -19,7 +19,7 @@ import {
     RawTestParent,
     TestData,
 } from '../common/types';
-import { unittestGetTestFolders, unittestGetTestPattern, unittestGetTopLevelDirectory, unittestGetDjangoSettingsModule } from './arguments';
+import { unittestGetTestFolders, unittestGetTestPattern, unittestGetTopLevelDirectory, unittestGetDjangoManagePyModule } from './arguments';
 import {
     createErrorTestItem,
     createWorkspaceRootTestItem,
@@ -131,21 +131,21 @@ export class UnittestController implements ITestFrameworkController {
             const startDir = unittestGetTestFolders(options.args)[0];
             const pattern = unittestGetTestPattern(options.args);
             const topLevelDir = unittestGetTopLevelDirectory(options.args);
-            const djangoSettingsModule = unittestGetDjangoSettingsModule(options.args);
+            const djangoManagePyModule = unittestGetDjangoManagePyModule(options.args);
             let testDir = startDir;
             if (path.isAbsolute(startDir)) {
                 const relative = path.relative(options.cwd, startDir);
                 testDir = relative.length > 0 ? relative : '.';
             }
 
-            // Here I did reordered the items inside the list because I thought may be djangoSettingsModule require more priority than topLevelDir
-            // This strongly need to be check by a TS developer!
+            // Here I did reordered the items inside the list because I thought may be djangoManagePyModule require more priority than topLevelDir
+            // This strongly needs to be reviewed
             const runOptionsArgs: string[] =
-                djangoSettingsModule == null
+                djangoManagePyModule == null
                 ? [startDir, pattern]
                 : topLevelDir == null
-                ? [startDir, pattern, djangoSettingsModule]
-                : [startDir, pattern, djangoSettingsModule, topLevelDir];
+                ? [startDir, pattern, djangoManagePyModule]
+                : [startDir, pattern, djangoManagePyModule, topLevelDir];
 
             const runOptions: Options = {
                 // unittest needs to load modules in the workspace

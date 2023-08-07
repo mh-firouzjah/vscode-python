@@ -24,7 +24,7 @@ from testing_tools import socket_manager
 
 # If I use from utils then there will be an import error in test_discovery.py.
 from unittestadapter.utils import TestNode, build_test_tree, parse_unittest_args
-from unittestadapter.django_test_init import setup_django_test_env
+from djangotest_adapter import setup_django_env
 
 # Add the lib path to sys.path to find the typing_extensions module.
 sys.path.insert(0, os.path.join(PYTHON_FILES, "lib", "python"))
@@ -68,7 +68,7 @@ def discover_tests(
     - cwd: Absolute path to the test start directory;
     - uuid: UUID sent by the caller of the Python script, that needs to be sent back as an integrity check;
     - status: Test discovery status, can be "success" or "error";
-    - tests: Discoverered tests if any, not present otherwise. Note that the status can be "error" but the payload can still contain tests;
+    - tests: Discovered tests if any, not present otherwise. Note that the status can be "error" but the payload can still contain tests;
     - errors: Discovery errors if any, not present otherwise.
 
     Payload format for a successful discovery:
@@ -100,7 +100,7 @@ def discover_tests(
         loader = unittest.TestLoader()
         suite = loader.discover(start_dir, pattern, top_level_dir)
 
-        tests, errors = build_test_tree(suite, cwd)  # test tree built succesfully here.
+        tests, errors = build_test_tree(suite, cwd)  # test tree built successfully here.
 
     except Exception:
         errors.append(traceback.format_exc())
@@ -120,14 +120,13 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     index = argv.index("--udiscovery")
 
-    start_dir, pattern, top_level_dir, django_settings_module = parse_unittest_args(argv[index + 1 :])
+    start_dir, pattern, top_level_dir, manage_py_module = parse_unittest_args(
+        argv[index + 1 :]
+    )
 
     # Setup django env to prevent missing django tests
-    if django_settings_module is not None:
-        setup_django_test_env(django_settings_module)
-    else:
-        # Try to be smart and find DJANGO_SETTINGS_MODULE
-        setup_django_test_env(root=start_dir)
+    if manage_py_module is not None:
+        setup_django_env(manage_py_module)
 
     # Perform test discovery.
     port, uuid = parse_discovery_cli_args(argv[:index])
@@ -136,11 +135,10 @@ if __name__ == "__main__":
     # Build the request data (it has to be a POST request or the Node side will not process it), and send it.
     addr = ("localhost", port)
     data = json.dumps(payload)
-    request = f"""Content-Length: {len(data)}
-Content-Type: application/json
-Request-uuid: {uuid}
-
-{data}"""
+    request = (f"Content-Length: {len(data)}\n"
+               "Content-Type: application/json\n"
+               f"Request-uuid: {uuid}\n\n"
+               f"{data}")
     try:
         with socket_manager.SocketManager(addr) as s:
             if s.socket is not None:

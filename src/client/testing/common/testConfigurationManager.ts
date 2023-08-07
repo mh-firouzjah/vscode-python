@@ -76,14 +76,14 @@ export abstract class TestConfigurationManager implements ITestConfigurationMana
         return this.showQuickPick(items, options);
     }
 
-    protected selectDjangoSettingsModule(rootDir: string): Promise<string> {
+    protected selectDjangoManagePyModule(rootDir: string): Promise<string> {
         const options = {
             ignoreFocusOut: true,
             matchOnDescription: true,
             matchOnDetail: true,
-            placeHolder: 'Select the django settings module',
+            placeHolder: 'Select the django manage.py module',
         };
-        // Here must be some code to open a popup and lets user to `find` the settings module py file which I can not write that code now!
+        // Here must be some code to open a popup and lets user to `find` the manage.py module
     }
 
     protected selectTestFilePattern(): Promise<string> {
