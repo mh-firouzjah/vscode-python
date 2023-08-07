@@ -286,7 +286,7 @@ def main():
     )
     (opts, _) = parser.parse_args()
 
-    setup_django_env(
+    djangotests = setup_django_env(
         **{"manage_py_module": getattr(opts, "jmm", None), "root": opts.us or "."}
     )
 
@@ -386,7 +386,7 @@ def main():
 
         failfast = opts.uf is not None
 
-        if getattr(opts, "jmm", False):
+        if djangotests:
             runner = DjangoTestsDiscoverRunner(
                 verbosity=opts.uvInt, resultclass=VsTestResult, failfast=failfast
                 )
