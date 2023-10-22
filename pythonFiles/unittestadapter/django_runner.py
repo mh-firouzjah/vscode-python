@@ -38,23 +38,25 @@ def setup_django_env(start_dir: Union[str, None]):
         cwd = os.path.abspath(start_dir)
         manage_py_path = os.path.join(cwd, "manage.py")
 
-    # NOTE: Unnecessary if django_settings_module is determined otherway.👇🏻>>>
-    import re
-    try:
-        with open(manage_py_path, "r") as f:
-            manage_py_module = f.readlines()
-    except FileNotFoundError:
-        print("Error running Django, manage.py not found")
-        return False
+    django_settings_module = os.environ.get("DJANGO_SETTINGS_MODULE", None)
 
-    django_settings_module = None
-    pattern = r"^os\.environ\.setdefault\((\'|\")DJANGO_SETTINGS_MODULE(\'|\"), (\'|\")(?P<settings_path>[\w.]+)(\'|\")\)$"
-    for line in manage_py_module:
-        matched = re.match(pattern, line.strip())
-        if matched is not None:
-            django_settings_module = matched.groupdict().get("settings_path", None)
-            break
-    # NOTE: Unnecessary if django_settings_module is determined otherway.👆🏻<<<
+    if django_settings_module is None:
+        print("Warning running Django, missing django settings module in environment, reading from manage.py")
+
+        import re
+        try:
+            with open(manage_py_path, "r") as f:
+                manage_py_module = f.readlines()
+        except FileNotFoundError:
+            print("Error running Django, manage.py not found")
+            return False
+
+        pattern = r"^os\.environ\.setdefault\((\'|\")DJANGO_SETTINGS_MODULE(\'|\"), (\'|\")(?P<settings_path>[\w.]+)(\'|\")\)$"
+        for line in manage_py_module:
+            matched = re.match(pattern, line.strip())
+            if matched is not None:
+                django_settings_module = matched.groupdict().get("settings_path", None)
+                break
 
     if django_settings_module is None:
         print("Error running Django, django settings module not found")
